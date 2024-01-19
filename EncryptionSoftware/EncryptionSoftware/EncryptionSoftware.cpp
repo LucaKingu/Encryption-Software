@@ -1,20 +1,99 @@
-// EncryptionSoftware.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
 
+#include "cryptlib.h"
+#include "rijndael.h"
+#include "modes.h"
+#include "files.h"
+#include "osrng.h"
+#include "hex.h"
+
+#include <fstream>
 #include <iostream>
+#include <cstring>
 
-int main()
+#include <aes.h>
+#include <filters.h>
+#include <modes.h>
+#include <osrng.h>
+
+
+
+int main(int argc, char* argv[])
 {
-    std::cout << "Hello World!\n";
+    using namespace CryptoPP;
+
+    AutoSeededRandomPool prng;
+    HexEncoder encoder(new FileSink(std::cout));
+
+    SecByteBlock key(AES::DEFAULT_KEYLENGTH);
+    SecByteBlock iv(AES::BLOCKSIZE);
+
+    prng.GenerateBlock(key, key.size());
+    prng.GenerateBlock(iv, iv.size());
+
+    std::string plain = "Luca Alfino Test";
+    std::string cipher, recovered;
+
+    std::cout << "plain text: " << plain << std::endl;
+
+    /*********************************\
+    \*********************************/
+
+    try
+    {
+        CBC_Mode< AES >::Encryption e;
+        e.SetKeyWithIV(key, key.size(), iv);
+
+        StringSource s(plain, true,
+            new StreamTransformationFilter(e,
+                new StringSink(cipher)
+            ) // StreamTransformationFilter
+        ); // StringSource
+    }
+    catch (const Exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+        exit(1);
+    }
+
+    /*********************************\
+    \*********************************/
+
+    std::cout << "key: ";
+    encoder.Put(key, key.size());
+    encoder.MessageEnd();
+    std::cout << std::endl;
+
+    std::cout << "iv: ";
+    encoder.Put(iv, iv.size());
+    encoder.MessageEnd();
+    std::cout << std::endl;
+
+    std::cout << "cipher text: ";
+    encoder.Put((const byte*)&cipher[0], cipher.size());
+    encoder.MessageEnd();
+    std::cout << std::endl;
+
+    /*********************************\
+    \*********************************/
+
+    try
+    {
+        CBC_Mode< AES >::Decryption d;
+        d.SetKeyWithIV(key, key.size(), iv);
+
+        StringSource s(cipher, true,
+            new StreamTransformationFilter(d,
+                new StringSink(recovered)
+            ) // StreamTransformationFilter
+        ); // StringSource
+
+        std::cout << "recovered text: " << recovered << std::endl;
+    }
+    catch (const Exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+        exit(1);
+    }
+
+    return 0;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
