@@ -1,4 +1,6 @@
 
+#include "Cipher.h"
+
 #include "cryptlib.h"
 #include "rijndael.h"
 #include "modes.h"
@@ -15,7 +17,7 @@
 #include <modes.h>
 #include <osrng.h>
 
-
+using namespace std;
 
 int main(int argc, char* argv[])
 {
