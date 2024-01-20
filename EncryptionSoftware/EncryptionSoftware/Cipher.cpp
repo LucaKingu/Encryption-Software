@@ -3,15 +3,16 @@
 #include <aes.h>
 #include <filters.h>
 #include <modes.h>
-#include <osrng.h> //Operating system random generation used for AutoSeededRandomPool
+#include <osrng.h> 
 
+
+using namespace std;
 
 Cipher::Cipher(const char* password)
 {
-}
-
-Cipher::~Cipher()
-{
+	size_t passwordLength = strlen(password);
+	storedPassword = new char[passwordLength + 1];		// Accounting for \0 char
+	strcpy(storedPassword, password);
 }
 
 bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
@@ -32,4 +33,9 @@ bool Cipher::generateRandomIV()
 bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength)
 {
 	return false;
+}
+
+Cipher::~Cipher()	//Avoding memory leaks
+{
+	delete[] storedPassword;
 }
