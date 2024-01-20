@@ -15,6 +15,8 @@
 #include "sha.h"
 #include "files.h"
 
+#include "hex.h"
+
 
 using namespace std;
 using namespace CryptoPP;
@@ -32,20 +34,21 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 	SecByteBlock salt = generateRandomSalt();
 	generateRandomIV();
 
+	
+	if (!deriveKeyFromPassword(storedPassword, strlen(storedPassword), salt))
+	{
+		cerr << "Key derivation failed" << endl;
+		return false;
+	}
+
 	if (iv.size() == 0 || key.size() == 0)
 	{
 		cerr << "Failed to generate IV" << endl;
 	}
-	
+
 	try
 	{
-		if (!deriveKeyFromPassword(storedPassword, strlen(storedPassword), salt))
-		{
-			cerr << "Key derivation failed" << endl;
-			return false;
-		}
-
-		ofstream outputFile(outputFileName, ios::binary);		//IV and salt saved to output file
+		ofstream outputFile(outputFileName, ios::binary);		
 		ifstream inputFile(inputFileName, ios::binary);		//Input / Output files for actual encryption
 		
 
@@ -55,22 +58,22 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 			return false;
 		}
 
-		outputFile.write(reinterpret_cast<const char*>(salt.data()), salt.size());
+		outputFile.write(reinterpret_cast<const char*>(salt.data()), salt.size());	//IV and salt saved to output file
 		outputFile.write(reinterpret_cast<const char*>(iv.data()), iv.size());
 
-		CBC_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC mode
+		CBC_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC algorithm with iv
 
 
-		StreamTransformationFilter filter(encryption, new FileSink(outputFileName));
+		StreamTransformationFilter filter(encryption, new FileSink(outputFileName));	//Data is encrypted and passed to output file
 
-		size_t fileSize = inputFile.tellg();  // Get the size of the file
+		size_t fileSize = inputFile.tellg();  // Get the size of the file and reset the position to 0
 		inputFile.seekg(0);
 
-		vector<char> fileBuffer(fileSize);
-		inputFile.read(fileBuffer.data(), fileSize);
+		vector<char> fileBuffer(fileSize);				//Input contents of inputFile into buffer
+		inputFile.read(fileBuffer.data(), fileSize);	
 
-		filter.Put(reinterpret_cast<const byte*>(fileBuffer.data()), fileSize);
-		filter.MessageEnd();
+		filter.Put(reinterpret_cast<const byte*>(fileBuffer.data()), fileSize);	  //Puts the fileBuffer content through the encryption filter
+		filter.MessageEnd();	//Ends Processsing
 
 		inputFile.close();
 		outputFile.close();
@@ -100,14 +103,18 @@ bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength, 
 	const int iterations = 10000;
 
 	try {
-		if (key.size() == 0)
-		{
-			cerr << "Processing key.." << endl;
-			return false;
-		}
+		key.resize(AES::DEFAULT_KEYLENGTH);
 
 		PKCS5_PBKDF2_HMAC<SHA256> PBKDF2;		//The password-based key derivation function
 		PBKDF2.DeriveKey(key, key.size(), 0, reinterpret_cast<const byte*>(password), passwordLength, salt, salt.size(), iterations);
+
+		//cerr << "Key size: " << key.size() << endl;
+
+
+		//Check the derived key
+		cerr << "Derived Key: ";
+		StringSource(reinterpret_cast<const byte*>(key.data()), key.size(), true, new HexEncoder(new FileSink(cerr)));
+		cerr << endl;
 
 		return true;
 	}
@@ -121,14 +128,16 @@ bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength, 
 SecByteBlock Cipher::generateRandomSalt()
 {
 	SecByteBlock salt(16); // 16 bytes
-	prng.GenerateBlock(salt, salt.size());
+	prng.GenerateBlock(salt, salt.size());	//A single salt is generated(Function name may be misleading)
+	cerr << "salt size: " << salt.size() << endl;
 	return salt;
 }
 
 bool Cipher::generateRandomIV()
 {
 	iv.resize(AES::BLOCKSIZE);		//128 bits(default)
-	prng.GenerateBlock(iv, iv.size());
+	prng.GenerateBlock(iv, iv.size());		//A single iv is generated(Function name may be misleading)
+	cerr << "IV size: " << iv.size() << endl;
 	return true;
 }
 
@@ -137,5 +146,5 @@ bool Cipher::generateRandomIV()
 Cipher::~Cipher()	//Avoding memory leaks
 {
 	delete[] storedPassword;
-	//
+	//Crypto++ manages memory interally no need to clean up objects from library
 } 

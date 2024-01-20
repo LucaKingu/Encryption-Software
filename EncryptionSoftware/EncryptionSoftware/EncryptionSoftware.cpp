@@ -21,8 +21,8 @@ using namespace std;
 
 int main()
 {
-    const char* inputFileName = R"(C:\Users\alfin\OneDrive\Desktop\EncrypTest.txt)";
-    const char* otuputFileName = R"(C:\Users\alfin\OneDrive\Desktop\EncryptedText.txt)";
+    const char* inputFileName = R"(C:\Users\alfin\OneDrive\Desktop\Structure Plan.txt)";
+    const char* otuputFileName = R"(C:\Users\alfin\OneDrive\Desktop\s.txt)";
     const char* password = "test";
 
     Cipher cipher(password);
