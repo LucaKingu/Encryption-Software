@@ -2,6 +2,22 @@
 
 
 
+#include <ostream>
+#include <iostream>
+#include <fstream>
+
+#include "aes.h"
+#include "filters.h"
+#include "modes.h"
+#include "osrng.h"
+#include "secblock.h"
+#include "pwdbased.h"
+//#include "pkcs5.h"
+//#include "evp.h"
+#include "sha.h"
+#include "files.h"
+
+
 
 using namespace CryptoPP;
 
@@ -21,7 +37,7 @@ private:
 	char* storedPassword;
 
 	bool generateRandomIV();
-	bool deriveKeyFromPassword(const char* password, size_t passwordLength);
+	bool deriveKeyFromPassword(const char* password, size_t passwordLength , const SecByteBlock& salt);
 	
 //From cryptlib library
 	SecByteBlock key;	//Class able to hold cryptographic keys

@@ -23,24 +23,22 @@ Cipher::Cipher(const char* password)
 {
 	size_t passwordLength = strlen(password);
 	storedPassword = new char[passwordLength + 1];		// Accounting for \0 char
-	strcpy(storedPassword, password);
+	strcpy_s(storedPassword, passwordLength + 1 , password);	//strcpy was unsafe
 }
 
 bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 {
-	if (key.size() == 0 || iv.size() == 0)
-	{
-		cerr << "Key or IV not derived" << endl;
-		return false;
-	}
 
+	SecByteBlock salt = generateRandomSalt();
+	generateRandomIV();
+
+	if (iv.size() == 0 || key.size() == 0)
+	{
+		cerr << "Failed to generate IV" << endl;
+	}
 	
 	try
 	{
-		SecByteBlock salt = generateRandomSalt();
-		generateRandomIV();
-
-
 		if (!deriveKeyFromPassword(storedPassword, strlen(storedPassword), salt))
 		{
 			cerr << "Key derivation failed" << endl;
@@ -61,6 +59,7 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 		outputFile.write(reinterpret_cast<const char*>(iv.data()), iv.size());
 
 		CBC_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC mode
+
 
 		StreamTransformationFilter filter(encryption, new FileSink(outputFileName));
 
@@ -103,7 +102,7 @@ bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength, 
 	try {
 		if (key.size() == 0)
 		{
-			cerr << "key not allocated" << endl;
+			cerr << "Processing key.." << endl;
 			return false;
 		}
 

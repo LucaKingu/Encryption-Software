@@ -19,82 +19,21 @@
 
 using namespace std;
 
-int main(int argc, char* argv[])
+int main()
 {
-    using namespace CryptoPP;
+    const char* inputFileName = R"(C:\Users\alfin\OneDrive\Desktop\EncrypTest.txt)";
+    const char* otuputFileName = R"(C:\Users\alfin\OneDrive\Desktop\EncryptedText.txt)";
+    const char* password = "test";
 
-    AutoSeededRandomPool prng;
-    HexEncoder encoder(new FileSink(std::cout));
+    Cipher cipher(password);
 
-    SecByteBlock key(AES::DEFAULT_KEYLENGTH);
-    SecByteBlock iv(AES::BLOCKSIZE);
-
-    prng.GenerateBlock(key, key.size());
-    prng.GenerateBlock(iv, iv.size());
-
-    std::string plain = "Luca Alfino Test";
-    std::string cipher, recovered;
-
-    std::cout << "plain text: " << plain << std::endl;
-
-    /*********************************\
-    \*********************************/
-
-    try
+    if (cipher.encryptFile(inputFileName, otuputFileName))
     {
-        CBC_Mode< AES >::Encryption e;
-        e.SetKeyWithIV(key, key.size(), iv);
-
-        StringSource s(plain, true,
-            new StreamTransformationFilter(e,
-                new StringSink(cipher)
-            ) // StreamTransformationFilter
-        ); // StringSource
+        cout << "Encryption successfull" << endl;
     }
-    catch (const Exception& e)
+    else
     {
-        std::cerr << e.what() << std::endl;
-        exit(1);
-    }
-
-    /*********************************\
-    \*********************************/
-
-    std::cout << "key: ";
-    encoder.Put(key, key.size());
-    encoder.MessageEnd();
-    std::cout << std::endl;
-
-    std::cout << "iv: ";
-    encoder.Put(iv, iv.size());
-    encoder.MessageEnd();
-    std::cout << std::endl;
-
-    std::cout << "cipher text: ";
-    encoder.Put((const byte*)&cipher[0], cipher.size());
-    encoder.MessageEnd();
-    std::cout << std::endl;
-
-    /*********************************\
-    \*********************************/
-
-    try
-    {
-        CBC_Mode< AES >::Decryption d;
-        d.SetKeyWithIV(key, key.size(), iv);
-
-        StringSource s(cipher, true,
-            new StreamTransformationFilter(d,
-                new StringSink(recovered)
-            ) // StreamTransformationFilter
-        ); // StringSource
-
-        std::cout << "recovered text: " << recovered << std::endl;
-    }
-    catch (const Exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-        exit(1);
+        cerr << "Encryption failed" << endl;
     }
 
     return 0;
