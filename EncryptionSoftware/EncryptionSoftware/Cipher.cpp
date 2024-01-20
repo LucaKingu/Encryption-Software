@@ -1,9 +1,14 @@
 #include "Cipher.h"
 
-#include <aes.h>
-#include <filters.h>
-#include <modes.h>
-#include <osrng.h> 
+#include <ostream>
+#include <iostream>
+#include <fstream>
+
+#include "aes.h"
+#include "filters.h"
+#include "modes.h"
+#include "osrng.h" 
+#include "files.h"
 
 
 using namespace std;
@@ -18,7 +23,51 @@ Cipher::Cipher(const char* password)
 
 bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 {
-	return false;
+	if (key.size() == 0 || iv.size() == 0)
+	{
+		cerr << "Key or IV not derived" << endl;
+		return false;
+	}
+
+	try
+	{
+		ifstream inputFile(inputFileName, ios::binary);
+		ofstream outputFile(outputFileName, ios::binary);
+
+		if (!inputFile.is_open() || !outputFile.is_open())
+		{
+			cerr << "Error opening files" << endl;
+			return false;
+		}
+
+		CBC_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC mode
+
+		StreamTransformationFilter filter(encryption, new FileSink(outputFileName));
+
+		size_t fileSize = inputFile.tellg();  // Get the size of the file
+		inputFile.seekg(0);
+
+		vector<char> fileBuffer(fileSize);
+		inputFile.read(fileBuffer.data(), fileSize);
+
+		filter.Put(reinterpret_cast<const byte*>(fileBuffer.data()), fileSize);
+		filter.MessageEnd();
+
+		inputFile.close();
+		outputFile.close();
+
+		return true;
+
+	}
+	catch (const ifstream::failure& e) {
+		cerr << "File I/O error: " << e.what() << endl;
+		return false;
+	}
+	catch (const Exception& e) {
+		cerr << "Encryption error: " << e.what() << endl;
+		return false;
+
+	}
 }
 
 bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
@@ -35,11 +84,11 @@ bool Cipher::generateRandomIV()
 
 bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength)
 {
-	return false;
+	//
 }
 
 Cipher::~Cipher()	//Avoding memory leaks
 {
 	delete[] storedPassword;
 	//
-}
+} 
