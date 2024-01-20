@@ -29,6 +29,8 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 		return false;
 	}
 
+	SecByteBlock salt = generateRandomSalt();
+
 	try
 	{
 		ifstream inputFile(inputFileName, ios::binary);
@@ -40,6 +42,13 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 			return false;
 		}
 
+		//if (!deriveKeyFromPassword(storedPassword, strlen(storedPassword), salt))
+		//{
+			//cerr << "Key derivation failed" << endl;
+			//return false;
+		//}
+
+		generateRandomIV();
 		CBC_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC mode
 
 		StreamTransformationFilter filter(encryption, new FileSink(outputFileName));
@@ -75,6 +84,13 @@ bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 	return false;
 }
 
+SecByteBlock Cipher::generateRandomSalt()
+{
+	SecByteBlock salt(16); // 16 bytes
+	prng.GenerateBlock(salt, salt.size());
+	return salt;
+}
+
 bool Cipher::generateRandomIV()
 {
 	iv.resize(AES::BLOCKSIZE);		//128 bits(default)
@@ -86,6 +102,7 @@ bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength)
 {
 	//
 }
+
 
 Cipher::~Cipher()	//Avoding memory leaks
 {
