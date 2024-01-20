@@ -34,12 +34,22 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 		return false;
 	}
 
-	//SecByteBlock salt = generateRandomSalt();
-
+	
 	try
 	{
-		ifstream inputFile(inputFileName, ios::binary);
-		ofstream outputFile(outputFileName, ios::binary);
+		SecByteBlock salt = generateRandomSalt();
+		generateRandomIV();
+
+
+		if (!deriveKeyFromPassword(storedPassword, strlen(storedPassword), salt))
+		{
+			cerr << "Key derivation failed" << endl;
+			return false;
+		}
+
+		ofstream outputFile(outputFileName, ios::binary);		//IV and salt saved to output file
+		ifstream inputFile(inputFileName, ios::binary);		//Input / Output files for actual encryption
+		
 
 		if (!inputFile.is_open() || !outputFile.is_open())
 		{
@@ -47,13 +57,9 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 			return false;
 		}
 
-		//if (!deriveKeyFromPassword(storedPassword, strlen(storedPassword), salt))
-		//{
-			//cerr << "Key derivation failed" << endl;
-			//return false;
-		//}
+		outputFile.write(reinterpret_cast<const char*>(salt.data()), salt.size());
+		outputFile.write(reinterpret_cast<const char*>(iv.data()), iv.size());
 
-		//generateRandomIV();
 		CBC_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC mode
 
 		StreamTransformationFilter filter(encryption, new FileSink(outputFileName));
@@ -89,6 +95,30 @@ bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 	return false;
 }
 
+
+bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength, const SecByteBlock& salt)
+{
+	const int iterations = 10000;
+
+	try {
+		if (key.size() == 0)
+		{
+			cerr << "key not allocated" << endl;
+			return false;
+		}
+
+		PKCS5_PBKDF2_HMAC<SHA256> PBKDF2;		//The password-based key derivation function
+		PBKDF2.DeriveKey(key, key.size(), 0, reinterpret_cast<const byte*>(password), passwordLength, salt, salt.size(), iterations);
+
+		return true;
+	}
+	catch (const Exception e)
+	{
+		cerr << "Key Derivation error: " << e.what() << endl;
+		return false;
+	}
+}
+
 SecByteBlock Cipher::generateRandomSalt()
 {
 	SecByteBlock salt(16); // 16 bytes
@@ -103,28 +133,6 @@ bool Cipher::generateRandomIV()
 	return true;
 }
 
-bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength , const SecByteBlock& salt)
-{
-	const int iterations = 10000;
-
-	try {
-		if (key.size() == 0)
-		{
-			cerr << "key not allocated" << endl;
-			return false;
-		}
-
-		PKCS5_PBKDF2_HMAC<SHA256> PBKDF2;//The password-based key derivation function
-		PBKDF2.DeriveKey(key, key.size(), 0, reinterpret_cast<const byte*>(password), passwordLength, salt, salt.size(), iterations);
-
-		return true;
-	}
-	catch (const Exception e)
-	{
-		cerr << "Key Derivation error: " << e.what() << endl;
-		return false;
-	}
-}
 
 
 Cipher::~Cipher()	//Avoding memory leaks
