@@ -7,7 +7,12 @@
 #include "aes.h"
 #include "filters.h"
 #include "modes.h"
-#include "osrng.h" 
+#include "osrng.h"
+#include "secblock.h"
+#include "pwdbased.h"
+//#include "pkcs5.h"
+//#include "evp.h"
+#include "sha.h"
 #include "files.h"
 
 
@@ -29,7 +34,7 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 		return false;
 	}
 
-	SecByteBlock salt = generateRandomSalt();
+	//SecByteBlock salt = generateRandomSalt();
 
 	try
 	{
@@ -48,7 +53,7 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 			//return false;
 		//}
 
-		generateRandomIV();
+		//generateRandomIV();
 		CBC_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC mode
 
 		StreamTransformationFilter filter(encryption, new FileSink(outputFileName));
@@ -98,9 +103,27 @@ bool Cipher::generateRandomIV()
 	return true;
 }
 
-bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength)
+bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength , const SecByteBlock& salt)
 {
-	//
+	const int iterations = 10000;
+
+	try {
+		if (key.size() == 0)
+		{
+			cerr << "key not allocated" << endl;
+			return false;
+		}
+
+		PKCS5_PBKDF2_HMAC<SHA256> PBKDF2;//The password-based key derivation function
+		PBKDF2.DeriveKey(key, key.size(), 0, reinterpret_cast<const byte*>(password), passwordLength, salt, salt.size(), iterations);
+
+		return true;
+	}
+	catch (const Exception e)
+	{
+		cerr << "Key Derivation error: " << e.what() << endl;
+		return false;
+	}
 }
 
 
