@@ -7,6 +7,7 @@
 
 
 using namespace std;
+using namespace CryptoPP;
 
 Cipher::Cipher(const char* password)
 {
@@ -27,7 +28,9 @@ bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 
 bool Cipher::generateRandomIV()
 {
-	return false;
+	iv.resize(AES::BLOCKSIZE);		//128 bits(default)
+	prng.GenerateBlock(iv, iv.size());
+	return true;
 }
 
 bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength)
@@ -38,4 +41,5 @@ bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength)
 Cipher::~Cipher()	//Avoding memory leaks
 {
 	delete[] storedPassword;
+	//
 }
