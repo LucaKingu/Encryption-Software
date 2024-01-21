@@ -61,6 +61,15 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 		outputFile.write(reinterpret_cast<const char*>(salt.data()), salt.size());	//IV and salt saved to output file
 		outputFile.write(reinterpret_cast<const char*>(iv.data()), iv.size());
 
+		//Show Salt and IV
+		//cerr << "Read salt: ";
+		//StringSource(reinterpret_cast<const byte*>(salt.data()), salt.size(), true, new HexEncoder(new FileSink(cerr)));
+		//cerr << endl;
+
+		//cerr << "Read IV: ";
+		//StringSource(reinterpret_cast<const byte*>(iv.data()), iv.size(), true, new HexEncoder(new FileSink(cerr)));
+		//cerr << endl;
+
 		CBC_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC algorithm with iv
 
 
@@ -104,8 +113,21 @@ bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 			return false;
 		}
 
+
+
+		//I could not go around
+		salt.resize(16);
+		iv.resize(16);
 		inputFile.read(reinterpret_cast<char*>(salt.data()) , salt.size());
 		inputFile.read(reinterpret_cast<char*>(iv.data()), iv.size());
+
+		cerr << "Read salt: ";
+		StringSource(reinterpret_cast<const byte*>(salt.data()), salt.size(), true, new HexEncoder(new FileSink(cerr)));
+		cerr << endl;
+
+		cerr << "Read IV: ";
+		StringSource(reinterpret_cast<const byte*>(iv.data()), iv.size(), true, new HexEncoder(new FileSink(cerr)));
+		cerr << endl;
 
 		if (!deriveKeyFromPassword(storedPassword, strlen(storedPassword), salt))
 		{
@@ -115,7 +137,7 @@ bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 
 		CBC_Mode<AES>::Decryption decryption(key, key.size(), iv);	//Decryption Algorithm
 
-		StreamTransformationFilter filter(decryption, new FileSink(outputFileName));	//Decryption Filter
+		StreamTransformationFilter filter(decryption, new FileSink(outputFileName) , StreamTransformationFilter::NO_PADDING);	//Decryption Filter
 
 
 		size_t fileSize = inputFile.tellg();	//Read encrytped data
@@ -156,10 +178,7 @@ bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength, 
 		PKCS5_PBKDF2_HMAC<SHA256> PBKDF2;		//The password-based key derivation function
 		PBKDF2.DeriveKey(key, key.size(), 0, reinterpret_cast<const byte*>(password), passwordLength, salt, salt.size(), iterations);
 
-		//cerr << "Key size: " << key.size() << endl;
-
-
-		//Check the derived key
+		//Show the derived key
 		cerr << "Derived Key: ";
 		StringSource(reinterpret_cast<const byte*>(key.data()), key.size(), true, new HexEncoder(new FileSink(cerr)));
 		cerr << endl;
@@ -175,7 +194,7 @@ bool Cipher::deriveKeyFromPassword(const char* password, size_t passwordLength, 
 
 SecByteBlock Cipher::generateRandomSalt()
 {
-	SecByteBlock salt(16); // 16 bytes
+	salt.resize(16); // 16 bytes
 	prng.GenerateBlock(salt, salt.size());	//A single salt is generated(Function name may be misleading)
 	cerr << "salt size: " << salt.size() << endl;
 	return salt;
