@@ -73,7 +73,7 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 		CBC_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC algorithm with iv
 
 
-		StreamTransformationFilter filter(encryption, new FileSink(outputFileName));	//Data is encrypted and passed to output file
+		StreamTransformationFilter filter(encryption, new FileSink(outputFileName) , StreamTransformationFilter::PKCS_PADDING);	//Data is encrypted and passed to output file
 
 		size_t fileSize = inputFile.tellg();  // Get the size of the file and reset the position to 0
 		inputFile.seekg(0);
@@ -134,7 +134,7 @@ bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 
 		CBC_Mode<AES>::Decryption decryption(key, key.size(), iv);	//Decryption Algorithm
 
-		StreamTransformationFilter filter(decryption, new FileSink(outputFileName) , StreamTransformationFilter::NO_PADDING);	//Decryption Filter
+		StreamTransformationFilter filter(decryption, new FileSink(outputFileName) , StreamTransformationFilter::PKCS_PADDING);	//Decryption Filter
 
 
 		size_t fileSize = inputFile.tellg();	//Read encrytped data
