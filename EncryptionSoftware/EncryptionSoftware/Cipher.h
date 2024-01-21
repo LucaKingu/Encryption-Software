@@ -40,8 +40,9 @@ private:
 	bool deriveKeyFromPassword(const char* password, size_t passwordLength , const SecByteBlock& salt);
 	
 //From cryptlib library
-	SecByteBlock key;	//Class able to hold cryptographic keys
-	SecByteBlock iv;	//Same class able to hold an initilization vector(Random number)
+	SecByteBlock key;	//Class able to act as a cryptographic key
+	SecByteBlock iv;	//Same class able to act as an initilization vector(Random number)
+	SecByteBlock salt;	//Able to act as a salt
 	AutoSeededRandomPool prng;  //A class to generate a hilghy secure random number for the iv
 
 	SecByteBlock generateRandomSalt();	//Function for a salt for KDF

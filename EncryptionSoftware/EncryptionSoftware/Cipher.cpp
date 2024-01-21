@@ -31,7 +31,7 @@ Cipher::Cipher(const char* password)
 bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 {
 
-	SecByteBlock salt = generateRandomSalt();
+    salt = generateRandomSalt();
 	generateRandomIV();
 
 	
@@ -94,7 +94,55 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 
 bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 {
-	return false;
+	try {
+		ifstream inputFile(inputFileName, ios::binary);
+		ofstream outputFile(outputFileName, ios::binary);
+
+		if (!inputFile.is_open() || !outputFile.is_open())
+		{
+			cerr << "Error opening files" << endl;
+			return false;
+		}
+
+		inputFile.read(reinterpret_cast<char*>(salt.data()) , salt.size());
+		inputFile.read(reinterpret_cast<char*>(iv.data()), iv.size());
+
+		if (!deriveKeyFromPassword(storedPassword, strlen(storedPassword), salt))
+		{
+			cerr << "Key derivation failed" << endl;
+			return false;
+		}
+
+		CBC_Mode<AES>::Decryption decryption(key, key.size(), iv);	//Decryption Algorithm
+
+		StreamTransformationFilter filter(decryption, new FileSink(outputFileName));	//Decryption Filter
+
+
+		size_t fileSize = inputFile.tellg();	//Read encrytped data
+		inputFile.seekg(0);
+
+		vector<char> fileBuffer(fileSize);		//Input contents into buffer
+		inputFile.read(fileBuffer.data(), fileSize);
+
+		filter.Put(reinterpret_cast<const byte*>(fileBuffer.data()), fileSize);	//Decrypt data
+		filter.MessageEnd();
+
+		inputFile.close();
+		outputFile.close();
+
+		return true;
+
+	}
+	catch(const ifstream::failure& e)
+	{
+		cerr << "File I/O error: " << e.what() << endl;
+		return false;
+	}
+	catch(const Exception& e)
+	{
+		cerr << "Decryption error: " << e.what() << endl;
+		return false;
+	}
 }
 
 
