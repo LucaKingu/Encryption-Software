@@ -62,13 +62,13 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 		outputFile.write(reinterpret_cast<const char*>(iv.data()), iv.size());
 
 		//Show Salt and IV
-		//cerr << "Read salt: ";
-		//StringSource(reinterpret_cast<const byte*>(salt.data()), salt.size(), true, new HexEncoder(new FileSink(cerr)));
-		//cerr << endl;
+		cerr << "Read salt: ";
+		StringSource(reinterpret_cast<const byte*>(salt.data()), salt.size(), true, new HexEncoder(new FileSink(cerr)));
+		cerr << endl;
 
-		//cerr << "Read IV: ";
-		//StringSource(reinterpret_cast<const byte*>(iv.data()), iv.size(), true, new HexEncoder(new FileSink(cerr)));
-		//cerr << endl;
+		cerr << "Read IV: ";
+		StringSource(reinterpret_cast<const byte*>(iv.data()), iv.size(), true, new HexEncoder(new FileSink(cerr)));
+		cerr << endl;
 
 		CBC_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC algorithm with iv
 
@@ -113,9 +113,6 @@ bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 			return false;
 		}
 
-
-
-		//I could not go around
 		salt.resize(16);
 		iv.resize(16);
 		inputFile.read(reinterpret_cast<char*>(salt.data()) , salt.size());
