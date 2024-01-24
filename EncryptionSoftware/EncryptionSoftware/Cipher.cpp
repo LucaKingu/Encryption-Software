@@ -48,7 +48,7 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 
 	try
 	{
-		ofstream outputFile(outputFileName, ios::binary);		
+		ofstream outputFile(outputFileName, ios::binary | ios::trunc);
 		ifstream inputFile(inputFileName, ios::binary);		//Input / Output files for actual encryption
 		
 
@@ -70,10 +70,10 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 		StringSource(reinterpret_cast<const byte*>(iv.data()), iv.size(), true, new HexEncoder(new FileSink(cerr)));
 		cerr << endl;
 
-		CBC_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC algorithm with iv
+		CFB_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC algorithm with iv
 
 
-		StreamTransformationFilter filter(encryption, new FileSink(outputFileName) , StreamTransformationFilter::PKCS_PADDING);	//Data is encrypted and passed to output file
+		StreamTransformationFilter filter(encryption, new FileSink(outputFileName));	//Data is encrypted and passed to output file
 
 		size_t fileSize = inputFile.tellg();  // Get the size of the file and reset the position to 0
 		inputFile.seekg(0);
@@ -105,7 +105,7 @@ bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 {
 	try {
 		ifstream inputFile(inputFileName, ios::binary);
-		ofstream outputFile(outputFileName, ios::binary);
+		ofstream outputFile(outputFileName, ios::binary | ios::trunc);
 
 		if (!inputFile.is_open() || !outputFile.is_open())
 		{
@@ -132,25 +132,53 @@ bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 			return false;
 		}
 
-		CBC_Mode<AES>::Decryption decryption(key, key.size(), iv);	//Decryption Algorithm
+		CFB_Mode<AES>::Decryption decryption(key, key.size(), iv);	//Decryption Algorithm
 
-		StreamTransformationFilter filter(decryption, new FileSink(outputFileName) , StreamTransformationFilter::PKCS_PADDING);	//Decryption Filter
+		StreamTransformationFilter filter(decryption, new FileSink(outputFileName));	//Decryption Filter
 
-
-		size_t fileSize = inputFile.tellg();	//Read encrytped data
+		//inputFile.seekg(0, ios::end);
+		inputFile.seekg(salt.size() + iv.size());	//Skip salt and IV
+		size_t fileSize = inputFile.tellg();	
 		inputFile.seekg(0);
 
-		vector<char> fileBuffer(fileSize);		//Input contents into buffer
+		vector<char> fileBuffer(fileSize);
+
+		//cerr << "Before filter input: " << fileSize << " bytes" << endl;
+
+		//while (inputFile.read(fileBuffer.data(), fileSize))
+		//{
+			//size_t bytesRead = static_cast<size_t>(inputFile.gcount());
+			//filter.Put(reinterpret_cast<const byte*>(fileBuffer.data()), bytesRead);
+		//}
+
 		inputFile.read(fileBuffer.data(), fileSize);
 
-		filter.Put(reinterpret_cast<const byte*>(fileBuffer.data()), fileSize);	//Decrypt data
+		cerr << "size" << fileBuffer.size() << endl;
+		filter.Put(reinterpret_cast<const byte*>(fileBuffer.data()), fileSize);
 		filter.MessageEnd();
+
+		size_t outputSize = filter.MaxRetrievable();
+		cerr << "size after" << outputSize << endl;
+
+		if (outputSize > 0)
+		{
+			vector<byte> decryptedOutput(outputSize);
+			filter.Get(decryptedOutput.data(), outputSize);
+
+			// Write the decrypted data to the output file
+			outputFile.write(reinterpret_cast<const char*>(decryptedOutput.data()), outputSize);
+
+			cerr << "Data written" << endl;
+		}
+		else
+		{
+			cerr << "No data retrieved from the filter." << endl;
+		}
 
 		inputFile.close();
 		outputFile.close();
 
 		return true;
-
 	}
 	catch(const ifstream::failure& e)
 	{

@@ -27,7 +27,7 @@ int main()
 
     Cipher cipher(password);
 
-    if (cipher.encryptFile(inputFileName, otuputFileName))
+    if (cipher.decryptFile(inputFileName, otuputFileName))
     {
         cout << "Decryption successfull" << endl;
     }
