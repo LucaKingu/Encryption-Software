@@ -143,14 +143,6 @@ bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 
 		vector<char> fileBuffer(fileSize);
 
-		//cerr << "Before filter input: " << fileSize << " bytes" << endl;
-
-		//while (inputFile.read(fileBuffer.data(), fileSize))
-		//{
-			//size_t bytesRead = static_cast<size_t>(inputFile.gcount());
-			//filter.Put(reinterpret_cast<const byte*>(fileBuffer.data()), bytesRead);
-		//}
-
 		inputFile.read(fileBuffer.data(), fileSize);
 
 		cerr << "size" << fileBuffer.size() << endl;
