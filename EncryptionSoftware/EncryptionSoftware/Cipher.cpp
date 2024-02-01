@@ -70,7 +70,7 @@ bool Cipher::encryptFile(const char* inputFileName, const char* outputFileName)
 		StringSource(reinterpret_cast<const byte*>(iv.data()), iv.size(), true, new HexEncoder(new FileSink(cerr)));
 		cerr << endl;
 
-		CFB_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CBC algorithm with iv
+		CFB_Mode<AES>::Encryption encryption(key, key.size(), iv);		//Choosing CFB algorithm with iv
 
 
 		StreamTransformationFilter filter(encryption, new FileSink(outputFileName));	//Data is encrypted and passed to output file

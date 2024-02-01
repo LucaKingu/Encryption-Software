@@ -18,9 +18,6 @@
 #include "files.h"
 
 
-
-using namespace CryptoPP;
-
 class Cipher
 {
 public:
@@ -37,15 +34,15 @@ private:
 	char* storedPassword;
 
 	bool generateRandomIV();
-	bool deriveKeyFromPassword(const char* password, size_t passwordLength , const SecByteBlock& salt);
+	bool deriveKeyFromPassword(const char* password, size_t passwordLength , const CryptoPP::SecByteBlock& salt);
 	
 //From cryptlib library
-	SecByteBlock key;	//Class able to act as a cryptographic key
-	SecByteBlock iv;	//Same class able to act as an initilization vector(Random number)
-	SecByteBlock salt;	//Able to act as a salt
-	AutoSeededRandomPool prng;  //A class to generate a hilghy secure random number for the iv
+	CryptoPP::SecByteBlock key;	//Class able to act as a cryptographic key
+	CryptoPP::SecByteBlock iv;	//Same class able to act as an initilization vector(Random number)
+	CryptoPP::SecByteBlock salt;	//Able to act as a salt
+	CryptoPP::AutoSeededRandomPool prng;  //A class to generate a hilghy secure random number for the iv
 
-	SecByteBlock generateRandomSalt();	//Function for a salt for KDF
+	CryptoPP::SecByteBlock generateRandomSalt();	//Function for a salt for KDF
 	
 	
 };
