@@ -4,8 +4,9 @@ Advanced encryption standard with Cipher feedback mode are used for Encryption a
 
 The creation of this project shows:
   >Proper C++ files structure(.h / .cpp)
-  >AES With CBC mode with PBKDF2 Key derivation function
+  >AES With CFB mode with PBKDF2 Key derivation function
   >Better Proficiency with C++
+  >Better understanding of C++ practices
   >Familiarity with new functions from internal library
   >Better understanding of github functions and external dependincies
   >Better familiarity with external dependincies configurations
