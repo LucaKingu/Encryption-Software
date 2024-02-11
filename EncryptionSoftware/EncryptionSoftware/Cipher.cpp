@@ -142,12 +142,14 @@ bool Cipher::decryptFile(const char* inputFileName, const char* outputFileName)
 		inputFile.seekg(0);
 
 		vector<char> fileBuffer(fileSize);
-
 		inputFile.read(fileBuffer.data(), fileSize);
 
 		cerr << "size" << fileBuffer.size() << endl;
 		filter.Put(reinterpret_cast<const byte*>(fileBuffer.data()), fileSize);
 		filter.MessageEnd();
+		
+		//Destory filter object
+		filter.Detach(new FileSink(outputFileName));
 
 		size_t outputSize = filter.MaxRetrievable();
 		cerr << "size after" << outputSize << endl;
